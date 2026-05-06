@@ -10,7 +10,11 @@ export function GameMenu({ onSelectMode }: GameMenuProps) {
   const [highScores, setHighScores] = useState<HighScore[]>([]);
 
   useEffect(() => {
-    setHighScores(getHighScores());
+    const fetchScores = async () => {
+      const scores = await getHighScores();
+      setHighScores(scores);
+    };
+    fetchScores();
   }, []);
 
   return (

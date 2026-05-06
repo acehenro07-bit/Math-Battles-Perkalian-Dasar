@@ -1,48 +1,66 @@
 import { getTier } from './tiers';
+import { supabase } from '../lib/supabase';
 
 export interface HighScore {
   name: string;
   score: number;
   tier: string;
-  date: number;
+  date: string; // Changed from number to string for Supabase compatibility (ISO date)
 }
 
-const STORAGE_KEY = 'math_battles_high_scores';
-
-export function getHighScores(): HighScore[] {
+export async function getHighScores(): Promise<HighScore[]> {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
-      return JSON.parse(data);
+    const { data, error } = await supabase
+      .from('high_scores')
+      .select('*')
+      .order('score', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('SUPABASE_FETCH_ERROR:', error.message, error.details, error.hint);
+      return [];
     }
+    
+    return data || [];
   } catch (e) {
-    console.error('Failed to load high scores', e);
+    console.error('Sudah Cek Secrets?:', e);
+    return [];
   }
-  return [];
 }
 
-export function saveHighScore(name: string, score: number) {
+export async function saveHighScore(name: string, score: number) {
   if (!name.trim()) return;
   const tier = getTier(score).title;
-  const newScore: HighScore = {
+  
+  const newScore = {
     name: name.trim(),
     score,
     tier,
-    date: Date.now(),
+    date: new Date().toISOString(),
   };
 
-  const scores = getHighScores();
-  scores.push(newScore);
-  
-  // Sort descending by score
-  scores.sort((a, b) => b.score - a.score);
-  
-  // Keep only top 10
-  const top10 = scores.slice(0, 10);
-  
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(top10));
+    const { error, data } = await supabase
+      .from('high_scores')
+      .insert([newScore])
+      .select();
+    
+    if (error) {
+      console.error('Supabase INSERT Error Detail:', error);
+      throw error;
+    }
+    console.log('Score saved successfully to Supabase:', data);
   } catch (e) {
-    console.error('Failed to save high scores', e);
+    console.error('Failed to save high score to Supabase:', e);
+    
+    // Fallback tetap ke local storage jika database gagal
+    try {
+      const localKey = 'math_battles_pending_scores';
+      const pending = JSON.parse(localStorage.getItem(localKey) || '[]');
+      pending.push(newScore);
+      localStorage.setItem(localKey, JSON.stringify(pending.slice(-10)));
+    } catch (err) {
+      console.error('Failed to save fallback score', err);
+    }
   }
 }
