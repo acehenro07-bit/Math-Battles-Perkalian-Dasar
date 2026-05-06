@@ -11,8 +11,11 @@ export function PvP({ playerNames, onFinish, onExit }: PvPProps) {
   const [p1State, setP1State] = useState<{ isOver: boolean; score: number }>({ isOver: false, score: 0 });
   const [p2State, setP2State] = useState<{ isOver: boolean; score: number }>({ isOver: false, score: 0 });
 
+  const hasFinished = React.useRef(false);
+
   useEffect(() => {
-    if (p1State.isOver && p2State.isOver) {
+    if (p1State.isOver && p2State.isOver && !hasFinished.current) {
+      hasFinished.current = true;
       const timeout = setTimeout(() => {
         onFinish(p1State.score, p2State.score);
       }, 1500);

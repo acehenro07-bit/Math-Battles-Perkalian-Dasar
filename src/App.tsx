@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { GameMenu } from './components/GameMenu';
 import { PreGameSetup } from './components/PreGameSetup';
 import { SinglePlayer } from './components/SinglePlayer';
@@ -31,20 +31,20 @@ export default function App() {
     checkConn();
   }, []);
 
-  const handleFinishSingle = async (score: number) => {
+  const handleFinishSingle = useCallback(async (score: number) => {
     setScores({ p1: score });
+    setMode('result_single'); // Pindah mode dulu agar komponen SinglePlayer unmount
     await saveHighScore(playerNames.p1, score);
-    setMode('result_single');
-  };
+  }, [playerNames.p1]);
 
-  const handleFinishPvP = async (p1: number, p2: number) => {
+  const handleFinishPvP = useCallback(async (p1: number, p2: number) => {
     setScores({ p1, p2 });
+    setMode('result_pvp'); // Pindah mode dulu agar komponen PvP unmount
     await Promise.all([
       saveHighScore(playerNames.p1, p1),
       saveHighScore(playerNames.p2, p2)
     ]);
-    setMode('result_pvp');
-  };
+  }, [playerNames.p1, playerNames.p2]);
 
   const handleStartGame = (names: { p1: string; p2: string }) => {
     setPlayerNames(names);

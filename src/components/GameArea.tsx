@@ -30,9 +30,12 @@ export function GameArea({ title, themeColor = 'indigo', onGameOver, autoStart =
     }
   }, [autoStart, startGame]);
 
+  const hasReportedGameOver = React.useRef(false);
+
   // Report game over to parent exactly once when it happens
   useEffect(() => {
-    if (isOver && onGameOver) {
+    if (isOver && onGameOver && !hasReportedGameOver.current) {
+      hasReportedGameOver.current = true;
       onGameOver(score);
     }
   }, [isOver, score, onGameOver]);
